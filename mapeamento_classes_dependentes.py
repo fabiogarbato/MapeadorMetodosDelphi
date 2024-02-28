@@ -29,6 +29,20 @@ def procurar_validar_em_classe(caminho_arquivo):
         conteudo = f.read()
     return 'ValidarEmClasse' in conteudo
 
+def extrair_classes_lookup(caminho_arquivo):
+    with open(caminho_arquivo, 'r', encoding='iso-8859-1') as f:
+        conteudo = f.read()
+    padrao = r"LookupClasse\(\s*'([^']*)'"
+    classes = re.findall(padrao, conteudo, re.DOTALL)
+    return classes
+
+def extrair_classes_ValidarEmClasse(caminho_arquivo):
+    with open(caminho_arquivo, 'r', encoding='iso-8859-1') as f:
+        conteudo = f.read()
+    padrao = r"ValidarEmClasse\([^,]*,\s*'([^']*)'"
+    classes = re.findall(padrao, conteudo)
+    return classes
+
 arquivos_encontrados = []
 classes_com_lookup_total = {}
 classes_com_validar_total = {}
@@ -54,41 +68,51 @@ for raiz, diretorios, arquivos in os.walk(diretorio):
                 if os.path.exists(caminho_unit):
                     qtd_lookup = contar_metodos(caminho_unit, 'LookupClasse')
                     qtd_validar = contar_metodos(caminho_unit, 'ValidarEmClasse')
+                    classes_lookup = extrair_classes_lookup(caminho_unit)
+                    classes_validar = extrair_classes_ValidarEmClasse(caminho_unit)
 
                     if qtd_lookup > 0:
-                        classes_com_lookup_total[unit] = (nome_pasta, qtd_lookup)
+                        classes_com_lookup_total[unit] = (nome_pasta, qtd_lookup, classes_lookup)
                     if qtd_validar > 0:
-                        classes_com_validar_total[unit] = (nome_pasta, qtd_validar)
+                        classes_com_validar_total[unit] = (nome_pasta, qtd_validar, classes_validar)
 
-with open(os.path.join(diretorio_saida, "resumo_dpr.txt"), 'w', encoding='iso-8859-1') as f:
-    f.write("Arquivos .dpr e quantidade de units:\n")
-    for arquivo, qtd_units in arquivos_encontrados:
-        f.write(f"{arquivo}: {qtd_units} units\n")
+#Descomentar esse metodo para DEBUG das dpr
+# with open(os.path.join(diretorio_saida, "resumo_dpr.txt"), 'w', encoding='iso-8859-1') as f:
+#     f.write("Arquivos .dpr e quantidade de units:\n")
+#     for arquivo, qtd_units in arquivos_encontrados:
+#         f.write(f"{arquivo}: {qtd_units} units\n")
 
 soma_ocorrencias_lookup = 0
 
 if classes_com_lookup_total:
     with open(os.path.join(diretorio_saida, "LookupClasse.txt"), 'w', encoding='iso-8859-1') as f:
-        f.write("Units que contém o método 'LookupClasse'\n")
+        f.write("Units em todo o Delphi que contém o método 'LookupClasse'\n")
         f.write("-----------------------------------------\n")
         f.write(f"Total de units: {len(classes_com_lookup_total)}\n\n")
-        for classe, (modulo, qtd) in sorted(classes_com_lookup_total.items()):
-            f.write(f"{classe} - Modulo {modulo} - Ocorrências: {qtd}\n")
+        for unit, (modulo, qtd, classes) in sorted(classes_com_lookup_total.items()):
+            f.write(f"{unit} - Modulo {modulo} - Ocorrências: {qtd}\n")
             soma_ocorrencias_lookup += qtd
+            for classe in classes:
+                f.write(f"    {classe}\n")
         f.write(f"Total de Ocorrências: {soma_ocorrencias_lookup}\n")
+
 
 soma_ocorrencias_validar = 0
 
 if classes_com_validar_total:
     with open(os.path.join(diretorio_saida, "ValidarEmClasse.txt"), 'w', encoding='iso-8859-1') as f:
-        f.write("Units que contém o método 'ValidarEmClasse'\n")
+        f.write("Units em todo o Delphi que contém o método 'ValidarEmClasse'\n")
         f.write("-----------------------------------------\n")
         f.write(f"Total de units: {len(classes_com_validar_total)}\n\n")
-        for classe, (modulo, qtd) in sorted(classes_com_validar_total.items()):
-            f.write(f"{classe} - Modulo {modulo} - Ocorrências: {qtd}\n")
+        for unit, (modulo, qtd, classes) in sorted(classes_com_validar_total.items()):
+            f.write(f"{unit} - Modulo {modulo} - Ocorrências: {qtd}\n")
             soma_ocorrencias_validar += qtd
+            for classe in classes:
+                f.write(f"    {classe}\n")
         f.write(f"Total de Ocorrências: {soma_ocorrencias_validar}\n")
 
-print(f"Lista de arquivos .dpr e quantidade de units salva em {os.path.join(diretorio_saida, 'resumo_dpr.txt')}")
+
+
+# print(f"Lista de arquivos .dpr e quantidade de units salva em {os.path.join(diretorio_saida, 'resumo_dpr.txt')}")
 print(f"Lista de todas as classes com LookupClasse salva em {os.path.join(diretorio_saida, 'LookupClasse.txt')}")
 print(f"Lista de todas as classes com ValidarEmClasse salva em {os.path.join(diretorio_saida, 'ValidarEmClasse.txt')}")
