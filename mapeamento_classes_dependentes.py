@@ -43,6 +43,28 @@ def extrair_classes_ValidarEmClasse(caminho_arquivo):
     classes = re.findall(padrao, conteudo)
     return classes
 
+def imprimir_detalhes_unit(unit_nome):
+    if unit_nome in classes_com_lookup_total:
+        modulo, qtd, classes = classes_com_lookup_total[unit_nome]
+        print("")
+        print(f"LookupClasse em {unit_nome} - Modulo {modulo} - Ocorrências: {qtd}")
+        for classe in classes:
+            print(f"    {classe}")
+    else:
+        print("")
+        print(f"Nenhum LookupClasse encontrado em {unit_nome}")
+
+    if unit_nome in classes_com_validar_total:
+        modulo, qtd, classes = classes_com_validar_total[unit_nome]
+        print("")
+        print(f"ValidarEmClasse em {unit_nome} - Modulo {modulo} - Ocorrências: {qtd}")
+        for classe in classes:
+            print(f"    {classe}")
+    else:
+        print("")
+        print(f"Nenhum ValidarEmClasse encontrado em {unit_nome}")
+
+
 arquivos_encontrados = []
 classes_com_lookup_total = {}
 classes_com_validar_total = {}
@@ -116,3 +138,6 @@ if classes_com_validar_total:
 # print(f"Lista de arquivos .dpr e quantidade de units salva em {os.path.join(diretorio_saida, 'resumo_dpr.txt')}")
 print(f"Lista de todas as classes com LookupClasse salva em {os.path.join(diretorio_saida, 'LookupClasse.txt')}")
 print(f"Lista de todas as classes com ValidarEmClasse salva em {os.path.join(diretorio_saida, 'ValidarEmClasse.txt')}")
+
+nome_unit = input("Digite o nome da unit para exibir os detalhes de LookupClasse e ValidarEmClasse: ")
+imprimir_detalhes_unit(nome_unit)
