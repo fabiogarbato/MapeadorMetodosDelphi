@@ -91,6 +91,9 @@ def mapear_dfms(diretorio, diretorio_saida):
     with open(caminho_arquivo_dfms_nome_classe, 'w', encoding='iso-8859-1') as f:
         for dfm, classes_agregadas in classes_agregadas_por_dfm.items():
             f.write(f"{dfm}: {len(classes_agregadas)} classes agregadas diferentes\n")
+            for classe_agregada in sorted(classes_agregadas):
+                f.write(f"    - {classe_agregada}\n")
+            f.write("\n")  
 
     print(f"Lista de todos os arquivos .dfm salva em {nome_arquivo_todos_dfms}")
     print(f"Lista de arquivos .dfm por módulo salva em {diretorio_saida}")

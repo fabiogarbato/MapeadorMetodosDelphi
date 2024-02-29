@@ -114,7 +114,7 @@ def mapeamento_classes_dependentes(diretorio, diretorio_saida):
                 f.write(f"{unit} - Modulo {modulo} - Ocorrências: {qtd}\n")
                 soma_ocorrencias_lookup += qtd
                 for classe in classes:
-                    f.write(f"    {classe}\n")
+                    f.write(f"   - {classe}\n")
             f.write(f"Total de Ocorrências: {soma_ocorrencias_lookup}\n")
 
 
@@ -129,7 +129,7 @@ def mapeamento_classes_dependentes(diretorio, diretorio_saida):
                 f.write(f"{unit} - Modulo {modulo} - Ocorrências: {qtd}\n")
                 soma_ocorrencias_validar += qtd
                 for classe in classes:
-                    f.write(f"    {classe}\n")
+                    f.write(f"   - {classe}\n")
             f.write(f"Total de Ocorrências: {soma_ocorrencias_validar}\n")
 
 
