@@ -98,10 +98,10 @@ def mapeamento_classes_dependentes(diretorio, diretorio_saida):
                             classes_com_validar_total[unit] = (nome_pasta, qtd_validar, classes_validar)
 
     #Descomentar esse metodo para DEBUG das dpr
-    # with open(os.path.join(diretorio_saida, "resumo_dpr.txt"), 'w', encoding='iso-8859-1') as f:
-    #     f.write("Arquivos .dpr e quantidade de units:\n")
-    #     for arquivo, qtd_units in arquivos_encontrados:
-    #         f.write(f"{arquivo}: {qtd_units} units\n")
+    with open(os.path.join(diretorio_saida, "resumo_dpr.txt"), 'w', encoding='iso-8859-1') as f:
+        f.write("Arquivos .dpr e quantidade de units:\n")
+        for arquivo, qtd_units in arquivos_encontrados:
+            f.write(f"{arquivo}: {qtd_units} units\n")
 
     soma_ocorrencias_lookup = 0
 
@@ -133,9 +133,13 @@ def mapeamento_classes_dependentes(diretorio, diretorio_saida):
             f.write(f"Total de Ocorrências: {soma_ocorrencias_validar}\n")
 
 
-    # print(f"Lista de arquivos .dpr e quantidade de units salva em {os.path.join(diretorio_saida, 'resumo_dpr.txt')}")
+    print(f"Lista de arquivos .dpr e quantidade de units salva em {os.path.join(diretorio_saida, 'resumo_dpr.txt')}")
     print(f"Lista de todas as classes com LookupClasse salva em {os.path.join(diretorio_saida, 'LookupClasse.txt')}")
     print(f"Lista de todas as classes com ValidarEmClasse salva em {os.path.join(diretorio_saida, 'ValidarEmClasse.txt')}")
 
-    nome_unit = input("Digite o nome da unit para exibir os detalhes de LookupClasse e ValidarEmClasse: ")
-    imprimir_detalhes_unit(nome_unit)
+    executar_detalhes = False
+
+    if executar_detalhes:
+        nome_unit = input("Digite o nome da unit para exibir os detalhes de LookupClasse e ValidarEmClasse: ")
+        imprimir_detalhes_unit(nome_unit)
+
