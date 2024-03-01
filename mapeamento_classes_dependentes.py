@@ -97,7 +97,6 @@ def mapeamento_classes_dependentes(diretorio, diretorio_saida):
                         if qtd_validar > 0:
                             classes_com_validar_total[unit] = (nome_pasta, qtd_validar, classes_validar)
 
-    #Descomentar esse metodo para DEBUG das dpr
     with open(os.path.join(diretorio_saida, "resumo_dpr.txt"), 'w', encoding='iso-8859-1') as f:
         f.write("Arquivos .dpr e quantidade de units:\n")
         for arquivo, qtd_units in arquivos_encontrados:
