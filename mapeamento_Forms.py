@@ -15,15 +15,18 @@ def mapear_Formsdfms(diretorio, diretorio_saida):
 
                 caminho_completo = os.path.join(raiz, arquivo)
                 with open(caminho_completo, 'r', encoding='iso-8859-1') as f:
+                    classe_atual = None
                     for linha in f:
-                        if 'inherited' in linha and ':' in linha:
-                            classe = linha.split(':')[1].strip()
-                        elif 'NomeServidor' in linha:
+                        if 'TMClienteClasse' in linha:
+                            partes = linha.split(':')
+                            if len(partes) >= 2:
+                                classe_atual = partes[1].strip()
+                        elif 'NomeServidor' in linha and classe_atual:
                             partes = linha.split('=')
                             if len(partes) >= 2:
                                 nome_servidor = partes[1].strip().strip("'")
-                                informacoes_dfm.append(f"{nome_dfm} - {nome_servidor}")
-                                break  
+                                informacoes_dfm.append(f"{nome_dfm} - {classe_atual} - {nome_servidor}")
+                                classe_atual = None  
 
     nome_arquivo_saida = os.path.join(diretorio_saida, "forms_dfms.txt")
     with open(nome_arquivo_saida, 'w', encoding='utf-8') as f:
@@ -35,3 +38,5 @@ def mapear_Formsdfms(diretorio, diretorio_saida):
 
     print(f"Lista de arquivos DFM que começam com 'F' salva em {nome_arquivo_saida}")
     print(f"Informações extraídas dos arquivos DFM salvas em {nome_arquivo_informacoes}")
+
+
