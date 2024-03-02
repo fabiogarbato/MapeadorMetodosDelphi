@@ -1,4 +1,4 @@
-import os, re
+import os, re, csv
 
 def mapear_Formsdfms(diretorio, diretorio_saida):
     extensao_dfm = ".dfm"
@@ -124,7 +124,24 @@ def adicionar_objetos_banco_a_relacao(diretorio_saida_sombra, diretorio_saida_Fo
 
     print(f"Relação atualizada entre forms, sombras e objetos de banco (com tipos) salva em {nome_arquivo_relacao_atualizada}")
 
+def exportar_para_csv(diretorio_saida, nome_arquivo_entrada, nome_arquivo_saida):
+    caminho_arquivo_entrada = os.path.join(diretorio_saida, nome_arquivo_entrada)
 
+    caminho_arquivo_saida = os.path.join(diretorio_saida, nome_arquivo_saida)
+
+    dados = []
+    with open(caminho_arquivo_entrada, 'r', encoding='utf-8') as f:
+        for linha in f:
+            partes = linha.strip().split(" - ")
+            dados.append(partes)
+
+    with open(caminho_arquivo_saida, 'w', newline='', encoding='utf-8') as f:
+        escritor = csv.writer(f)
+        escritor.writerow(['Form', 'Sombra', 'Objetos de Banco'])  
+        for linha in dados:
+            escritor.writerow(linha)
+
+    print(f"Dados exportados para {caminho_arquivo_saida}")
 
 
 
