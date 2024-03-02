@@ -57,7 +57,7 @@ def extrair_e_salvar_informacoes_dfm(diretorio, diretorio_saida):
                     elif informacoes['TipoObjeto'] not in ['', 'objetoConsulta']:
                         if 'NomeMapa' in informacoes_temporarias:
                             relatorio.append(f"{informacoes['NomeArquivo']} - Mapa: {informacoes_temporarias['NomeMapa']} - Objeto: {informacoes['NomeMapa']} - Tipo: {informacoes['TipoObjeto']}")
-                            informacoes_temporarias = {}  # Resetar as informações temporárias após usá-las
+                            informacoes_temporarias = {}  
 
 
     nome_arquivo_relatorio = os.path.join(diretorio_saida, "relatorio.txt")
