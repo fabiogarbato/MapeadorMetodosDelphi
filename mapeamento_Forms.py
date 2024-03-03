@@ -95,15 +95,23 @@ def relacionar_sombras_com_forms(diretorio_saida):
 
 
 def adicionar_objetos_banco_a_relacao(diretorio_saida_sombra, diretorio_saida_FormDFM):
-    
+    classes_por_form = {}
+    with open(os.path.join(diretorio_saida_FormDFM, "informacoes_dfm.txt"), 'r', encoding='utf-8') as f:
+        for linha in f:
+            partes = linha.strip().split(" - ")
+            if len(partes) >= 3:
+                form, _, classe = partes
+                classe = 'C' + classe[6:] 
+                classes_por_form[form.replace('.dfm', '')] = classe
+
     objetos_banco_por_sombra = {}
     with open(os.path.join(diretorio_saida_sombra, "relatorio.txt"), 'r', encoding='utf-8') as f:
         for linha in f:
             partes = linha.strip().split(" - ")
             if len(partes) >= 4:
                 sombra, _, objeto, tipo = partes
-                tipo = tipo.split(":")[-1].strip()  
-                tipo = tipo.replace("objeto", "")  
+                tipo = tipo.split(":")[-1].strip()
+                tipo = tipo.replace("objeto", "")
                 objetos_banco_por_sombra.setdefault(sombra, []).append(f"{objeto} - Tipo: {tipo}")
 
     relacao_forms_sombras = []
@@ -115,14 +123,15 @@ def adicionar_objetos_banco_a_relacao(diretorio_saida_sombra, diretorio_saida_Fo
         partes = relacao.split(" - ")
         if len(partes) >= 2:
             form, sombra = partes
+            classe = classes_por_form.get(form, "C não encontrada")
             objetos_banco = objetos_banco_por_sombra.get(sombra, [])
-            relacao_atualizada.append(f"{form} - {sombra} - {' | '.join(objetos_banco)}")
+            relacao_atualizada.append(f"{form} - {classe} - {sombra} - {' | '.join(objetos_banco)}")
 
     nome_arquivo_relacao_atualizada = os.path.join(diretorio_saida_FormDFM, "relacao_forms_sombras_objetos.txt")
     with open(nome_arquivo_relacao_atualizada, 'w', encoding='utf-8') as f:
         f.write("\n".join(sorted(relacao_atualizada)))
 
-    print(f"Relação atualizada entre forms, sombras e objetos de banco (com tipos) salva em {nome_arquivo_relacao_atualizada}")
+    print(f"Relação atualizada entre forms, classes, sombras e objetos de banco (com tipos) salva em {nome_arquivo_relacao_atualizada}")
 
 def exportar_para_csv(diretorio_saida, nome_arquivo_entrada, nome_arquivo_saida):
     caminho_arquivo_entrada = os.path.join(diretorio_saida, nome_arquivo_entrada)
@@ -142,6 +151,7 @@ def exportar_para_csv(diretorio_saida, nome_arquivo_entrada, nome_arquivo_saida)
             escritor.writerow(linha)
 
     print(f"Dados exportados para {caminho_arquivo_saida}")
+
 
 
 
