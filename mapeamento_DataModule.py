@@ -116,3 +116,39 @@ def extrair_banco_DataModules(diretorio, arquivo_classes, diretorio_saida):
     nome_arquivo_saida = os.path.join(diretorio_saida, "informacoes_dfm.txt")
     with open(nome_arquivo_saida, 'w', encoding='utf-8') as f:
         f.write("\n".join(informacoes_totais))
+
+def adicionar_objetos_banco_a_relacao_DataModule(diretorio_saida_FormDFM_DataModule):
+    classes_por_form = {}
+    with open(os.path.join(diretorio_saida_FormDFM_DataModule, "relacionamentos_classes_formularios.txt"), 'r', encoding='utf-8') as f:
+        for linha in f:
+            partes = linha.strip().split(" -> ")
+            if len(partes) == 2:
+                classe, form = partes
+                classe = classe.strip('.pas')
+                form = form.strip('.pas')
+                classes_por_form[form] = classe
+
+    informacoes_banco_por_form = {}
+    with open(os.path.join(diretorio_saida_FormDFM_DataModule, "informacoes_dfm.txt"), 'r', encoding='utf-8') as f:
+        for linha in f:
+            partes = linha.strip().split(":")
+            if len(partes) >= 2:
+                form = partes[0]
+                tipo = "Procedure" if "StoredProcName" in partes[1] else "SQL.Query"
+                objeto = partes[2].strip() if tipo == "Procedure" else ":".join(partes[1:]).strip()
+                informacoes_banco_por_form.setdefault(form, []).append(f"{objeto} - Tipo: {tipo}")
+
+    relacao_atualizada = []
+    for form, classe in classes_por_form.items():
+        informacoes_banco = informacoes_banco_por_form.get(classe, [])
+        relacao_atualizada.append(f"{form} - {classe} - {' | '.join(informacoes_banco)}")
+
+    nome_arquivo_relacao_atualizada = os.path.join(diretorio_saida_FormDFM_DataModule, "relacao_forms_classes_objetos.txt")
+    with open(nome_arquivo_relacao_atualizada, 'w', encoding='utf-8') as f:
+        f.write("\n".join(sorted(relacao_atualizada)))
+
+    print(f"Relação atualizada entre forms, classes e objetos de banco (com tipos) salva em {nome_arquivo_relacao_atualizada}")
+
+
+
+
