@@ -1,4 +1,4 @@
-import os, re, csv
+import os, re, csv, psycopg2
 
 def listar_arquivos_sem_mpssombraconex_e_padrao(diretorio, diretorio_saida):
     extensao_pas = ".pas"
@@ -192,9 +192,120 @@ def exportar_para_csv_DataModule(diretorio_saida, nome_arquivo_entrada, nome_arq
 
     print(f"Dados exportados para {caminho_arquivo_saida}")
 
+def listar_arquivos_com_inicio_d_r(diretorio, diretorio_saida):
+    extensao_pas = ".pas"
+    arquivos_agrupados = {}
 
+    for raiz, diretorios, arquivos in os.walk(diretorio):
+        for arquivo in arquivos:
+            if arquivo.endswith(extensao_pas) and (arquivo.startswith("D") or arquivo.startswith("R")):
+                nome_correspondente_f = "F" + arquivo[1:]
+                if nome_correspondente_f in arquivos:
+                    nome_base = arquivo[1:-4]  
+                    if nome_base not in arquivos_agrupados:
+                        arquivos_agrupados[nome_base] = {"F": "", "D": "", "R": ""}
+                    arquivos_agrupados[nome_base][arquivo[0]] = arquivo
+                    arquivos_agrupados[nome_base]["F"] = nome_correspondente_f
 
+    for nome_base in arquivos_agrupados:
+        arquivo_d = arquivos_agrupados[nome_base]["D"]
+        if arquivo_d:
+            nome_inicio_r = "R" + arquivo_d[1:]
+            for arquivo in os.listdir(diretorio):
+                if arquivo.startswith(nome_inicio_r):
+                    arquivos_agrupados[nome_base]["R"] = arquivo
+                    break
 
+    nome_arquivo_saida = os.path.join(diretorio_saida, "arquivos_com_inicio_f_d_r.csv")
+    try:
+        with open(nome_arquivo_saida, 'w', newline='', encoding='utf-8') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(['Arquivo F', 'Arquivo D', 'Arquivo R'])
+            for nome_base in sorted(arquivos_agrupados.keys()):
+                csvwriter.writerow([arquivos_agrupados[nome_base]["F"], arquivos_agrupados[nome_base]["D"], arquivos_agrupados[nome_base]["R"]])
+        print(f"Lista de arquivos .pas agrupados por F, D e R: {nome_arquivo_saida}")
+    except Exception as e:
+        print(f"Erro ao escrever no arquivo CSV: {e}")
+
+def extrair_banco_DataModules_D(diretorio, diretorio_saida):
+    extensao_dfm = ".dfm"
+    informacoes_totais = []
+
+    for raiz, diretorios, arquivos in os.walk(diretorio):
+        for arquivo in arquivos:
+            if arquivo.endswith(extensao_dfm) and arquivo.startswith("D"):
+                caminho_dfm = os.path.join(raiz, arquivo)
+                with open(caminho_dfm, 'r', encoding='iso-8859-1') as f:
+                    conteudo_dfm = f.read()
+                    stored_proc_matches = re.findall(r'StoredProcName\s*=\s*\'(.*?)\'', conteudo_dfm)
+                    for match in stored_proc_matches:
+                        informacoes_totais.append([os.path.splitext(arquivo)[0], "StoredProcName", match])
+
+                    inicio_sql = 0
+                    while True:
+                        inicio_sql = conteudo_dfm.find('SQL.Strings = (', inicio_sql)
+                        if inicio_sql == -1:
+                            break
+                        parenteses_count = 1
+                        i = inicio_sql + 15
+                        sql_query_lines = []
+                        while i < len(conteudo_dfm) and parenteses_count > 0:
+                            if conteudo_dfm[i] == '(':
+                                parenteses_count += 1
+                            elif conteudo_dfm[i] == ')':
+                                parenteses_count -= 1
+                            if parenteses_count > 0:
+                                sql_query_lines.append(conteudo_dfm[i])
+                            i += 1
+                        sql_query = ''.join(sql_query_lines)
+
+                        def replace_hash_codes(s):
+                            return re.sub(r'#(\d+)', lambda m: chr(int(m.group(1))), s)
+
+                        sql_query = replace_hash_codes(sql_query.replace("#9", " ").replace("'", "").replace("#39", "'").strip())
+                        sql_query = re.sub(r'\s*\+\s*\'', '', sql_query, flags=re.MULTILINE)
+                        sql_query = re.sub(r'\s*\+\s*', '', sql_query)
+                        sql_query = ' '.join(sql_query.split())
+                        informacoes_totais.append([os.path.splitext(arquivo)[0], "SQL.Query", sql_query])
+                        inicio_sql = i
+
+    nome_arquivo_saida = os.path.join(diretorio_saida, "informacoes_dfm_D.csv")
+    with open(nome_arquivo_saida, 'w', newline='', encoding='utf-8') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['Arquivo', 'Tipo', 'Conteudo'])
+        csvwriter.writerows(informacoes_totais)
+
+def combinar_arquivos_e_objetos(diretorio_arquivos, diretorio_objetos, diretorio_saida):
+    arquivos_agrupados = {}
+    with open(diretorio_arquivos, 'r', encoding='utf-8') as csvfile:
+        csvreader = csv.reader(csvfile)
+        next(csvreader)  
+        for row in csvreader:
+            nome_arquivo_d = row[1].replace('.pas', '')
+            arquivos_agrupados[nome_arquivo_d] = row  
+
+    informacoes_objetos = {}
+    with open(diretorio_objetos, 'r', encoding='utf-8') as csvfile:
+        csvreader = csv.reader(csvfile)
+        next(csvreader) 
+        for row in csvreader:
+            nome_arquivo_d = row[0]
+            tipo = row[1]
+            conteudo = row[2]
+            if nome_arquivo_d in informacoes_objetos:
+                informacoes_objetos[nome_arquivo_d].append(f"{tipo}: {conteudo}")
+            else:
+                informacoes_objetos[nome_arquivo_d] = [f"{tipo}: {conteudo}"]
+
+    nome_arquivo_saida = os.path.join(diretorio_saida, "arquivos_e_objetos_combinados.csv")
+    with open(nome_arquivo_saida, 'w', newline='', encoding='utf-8') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['Arquivo F', 'Arquivo D', 'Arquivo R', 'Objetos'])
+        for nome_arquivo_d, arquivos in arquivos_agrupados.items():
+            objetos = " | ".join(informacoes_objetos.get(nome_arquivo_d, []))
+            csvwriter.writerow(arquivos + [objetos])
+
+    print(f"Arquivo combinado criado: {nome_arquivo_saida}")
 
 
 

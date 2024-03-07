@@ -92,6 +92,7 @@ def mapear_dfms(diretorio, diretorio_saida):
         for dfm, classes_agregadas in classes_agregadas_por_dfm.items():
             f.write(f"{dfm}: {len(classes_agregadas)} classes agregadas diferentes\n")
             for classe_agregada in sorted(classes_agregadas):
+                classe_agregada = classe_agregada.replace("Classe", "C")
                 f.write(f"    - {classe_agregada}\n")
             f.write("\n")  
 

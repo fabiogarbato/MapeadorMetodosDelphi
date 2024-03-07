@@ -1,4 +1,9 @@
 import os, re, csv
+import pandas as pd
+import psycopg2
+
+conn = psycopg2.connect(host='cerato.mps.interno', dbname='migracaoSql', user='FabioGarbato', password='BPt3bpMRzivTo3tamwC9')
+cursor = conn.cursor()
 
 def mapear_Formsdfms(diretorio, diretorio_saida):
     extensao_dfm = ".dfm"
@@ -95,14 +100,23 @@ def relacionar_sombras_com_forms(diretorio_saida):
 
 
 def adicionar_objetos_banco_a_relacao(diretorio_saida_sombra, diretorio_saida_FormDFM):
+    sombras_por_form = {}
+    with open(os.path.join(diretorio_saida_FormDFM, "relacao_forms_sombras.txt"), 'r', encoding='utf-8') as f:
+        for linha in f:
+            partes = linha.strip().split(" - ")
+            if len(partes) >= 2:
+                form, sombra = partes
+                sombras_por_form.setdefault(form, []).append(sombra)
+
     classes_por_form = {}
     with open(os.path.join(diretorio_saida_FormDFM, "informacoes_dfm.txt"), 'r', encoding='utf-8') as f:
         for linha in f:
             partes = linha.strip().split(" - ")
             if len(partes) >= 3:
                 form, _, classe = partes
-                classe = 'C' + classe[6:] 
-                classes_por_form[form.replace('.dfm', '')] = classe
+                classe = 'C' + classe[6:]
+                form = form.replace('.dfm', '')
+                classes_por_form.setdefault(form, []).append(classe)
 
     objetos_banco_por_sombra = {}
     with open(os.path.join(diretorio_saida_sombra, "relatorio.txt"), 'r', encoding='utf-8') as f:
@@ -114,16 +128,10 @@ def adicionar_objetos_banco_a_relacao(diretorio_saida_sombra, diretorio_saida_Fo
                 tipo = tipo.replace("objeto", "")
                 objetos_banco_por_sombra.setdefault(sombra, []).append(f"{objeto} - Tipo: {tipo}")
 
-    relacao_forms_sombras = []
-    with open(os.path.join(diretorio_saida_FormDFM, "relacao_forms_sombras.txt"), 'r', encoding='utf-8') as f:
-        relacao_forms_sombras = [linha.strip() for linha in f]
-
     relacao_atualizada = []
-    for relacao in relacao_forms_sombras:
-        partes = relacao.split(" - ")
-        if len(partes) >= 2:
-            form, sombra = partes
-            classe = classes_por_form.get(form, "C não encontrada")
+    for form, sombras in sombras_por_form.items():
+        classes = classes_por_form.get(form, ["C não encontrada"] * len(sombras))
+        for classe, sombra in zip(classes, sombras):
             objetos_banco = objetos_banco_por_sombra.get(sombra, [])
             relacao_atualizada.append(f"{form} - {classe} - {sombra} - {' | '.join(objetos_banco)}")
 
@@ -132,6 +140,7 @@ def adicionar_objetos_banco_a_relacao(diretorio_saida_sombra, diretorio_saida_Fo
         f.write("\n".join(sorted(relacao_atualizada)))
 
     print(f"Relação atualizada entre forms, classes, sombras e objetos de banco (com tipos) salva em {nome_arquivo_relacao_atualizada}")
+
 
 def exportar_para_csv(diretorio_saida, nome_arquivo_entrada, nome_arquivo_saida):
     caminho_arquivo_entrada = os.path.join(diretorio_saida, nome_arquivo_entrada)
@@ -151,6 +160,36 @@ def exportar_para_csv(diretorio_saida, nome_arquivo_entrada, nome_arquivo_saida)
             escritor.writerow(linha)
 
     print(f"Dados exportados para {caminho_arquivo_saida}")
+
+def inserir_no_banco(diretorio_saida, nome_arquivo_entrada):
+    caminho_arquivo_entrada = os.path.join(diretorio_saida, nome_arquivo_entrada)
+
+    # Conectar ao banco de dados
+    conn = psycopg2.connect(host='cerato.mps.interno', dbname='migracaoSql', user='FabioGarbato', password='BPt3bpMRzivTo3tamwC9')
+    cursor = conn.cursor()
+
+    # Ler os dados do arquivo e inserir no banco
+    with open(caminho_arquivo_entrada, 'r', encoding='utf-8') as f:
+        for linha in f:
+            partes = linha.strip().split(" - ")
+            if len(partes) > 5:
+                partes[4] = " - ".join(partes[4:])  # Juntar as partes excedentes na última coluna
+                partes = partes[:5]
+            partes += [None] * (5 - len(partes))  # Garantir que tenhamos 5 elementos
+            form, classe, sombra, relatorio, objeto_banco = partes
+            cursor.execute(
+                "INSERT INTO DataModule (Form, Classe, Sombra, Relatorio, ObjetoBanco) VALUES (%s, %s, %s, %s, %s)",
+                (form, classe, sombra, relatorio, objeto_banco)
+            )
+
+    # Finalizar a transação e fechar a conexão
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print(f"Dados inseridos no banco a partir de {caminho_arquivo_entrada}")
+
+
 
 
 
