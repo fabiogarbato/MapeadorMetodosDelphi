@@ -164,25 +164,23 @@ def exportar_para_csv(diretorio_saida, nome_arquivo_entrada, nome_arquivo_saida)
 def inserir_no_banco(diretorio_saida, nome_arquivo_entrada):
     caminho_arquivo_entrada = os.path.join(diretorio_saida, nome_arquivo_entrada)
 
-    # Conectar ao banco de dados
     conn = psycopg2.connect(host='cerato.mps.interno', dbname='migracaoSql', user='FabioGarbato', password='BPt3bpMRzivTo3tamwC9')
     cursor = conn.cursor()
 
-    # Ler os dados do arquivo e inserir no banco
     with open(caminho_arquivo_entrada, 'r', encoding='utf-8') as f:
         for linha in f:
             partes = linha.strip().split(" - ")
-            if len(partes) > 5:
-                partes[4] = " - ".join(partes[4:])  # Juntar as partes excedentes na última coluna
-                partes = partes[:5]
-            partes += [None] * (5 - len(partes))  # Garantir que tenhamos 5 elementos
-            form, classe, sombra, relatorio, objeto_banco = partes
+            if len(partes) > 4:
+                partes[3] = " - ".join(partes[3:])  
+                partes = partes[:4]
+            partes += [None] * (4 - len(partes))  
+            form, classe, sombra, objeto_banco = partes
+            relatorio = None  
             cursor.execute(
-                "INSERT INTO DataModule (Form, Classe, Sombra, Relatorio, ObjetoBanco) VALUES (%s, %s, %s, %s, %s)",
+                "INSERT INTO Mapa (Form, Classe, Sombra, Relatorio, ObjetoBanco) VALUES (%s, %s, %s, %s, %s)",
                 (form, classe, sombra, relatorio, objeto_banco)
             )
 
-    # Finalizar a transação e fechar a conexão
     conn.commit()
     cursor.close()
     conn.close()

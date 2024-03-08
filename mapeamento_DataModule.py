@@ -192,6 +192,34 @@ def exportar_para_csv_DataModule(diretorio_saida, nome_arquivo_entrada, nome_arq
 
     print(f"Dados exportados para {caminho_arquivo_saida}")
 
+def inserir_no_banco_mapa(diretorio_saida, nome_arquivo_entrada):
+    caminho_arquivo_entrada = os.path.join(diretorio_saida, nome_arquivo_entrada)
+
+    conn = psycopg2.connect(host='cerato.mps.interno', dbname='migracaoSql', user='FabioGarbato', password='BPt3bpMRzivTo3tamwC9')
+    cursor = conn.cursor()
+
+    with open(caminho_arquivo_entrada, 'r', encoding='utf-8') as f:
+        for linha in f:
+            partes = linha.strip().split(" -> ")
+            if len(partes) == 2:
+                classe, resto = partes
+                if ' | ' in resto:
+                    form, objetos_banco = resto.split(' | ', 1)
+                else:
+                    form = resto
+                    objetos_banco = None 
+
+                cursor.execute(
+                    "INSERT INTO Mapa (Form, Classe, Sombra, Relatorio, ObjetoBanco) VALUES (%s, %s, %s, %s, %s)",
+                    (form.strip(), classe.strip(), None, None, objetos_banco.strip() if objetos_banco else None)
+                )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print(f"Dados inseridos no banco a partir de {caminho_arquivo_entrada}")
+
 def listar_arquivos_com_inicio_d_r(diretorio, diretorio_saida):
     extensao_pas = ".pas"
     arquivos_agrupados = {}
