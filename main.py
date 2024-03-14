@@ -4,7 +4,8 @@ from mapear_objetos_banco import mapearSombra, extrair_e_salvar_informacoes_dfm
 from mapeamento_Forms import mapear_Formsdfms, listar_e_extrair_classes, relacionar_sombras_com_forms, adicionar_objetos_banco_a_relacao, exportar_para_csv, inserir_no_banco
 from mapeamento_DataModule import listar_arquivos_sem_mpssombraconex_e_padrao, relacionar_classes_formularios, extrair_banco_DataModules, exportar_para_csv_DataModule 
 from mapeamento_DataModule import adicionar_objetos_banco_a_relacao_DataModule, listar_arquivos_com_inicio_d_r, extrair_banco_DataModules_D, combinar_arquivos_e_objetos, inserir_no_banco_mapa, inserir_dados_combinados_no_banco
-from mapeamentoDcentro import listar_arquivos_dcentro, extrair_sql_dcentrosql
+from mapeamentoDcentro import listar_arquivos_dcentro, extrair_sql_dcentrosql, listar_arquivos_dcentro_sql, ler_arquivos_csv, listar_arquivos_com_e_sem_obter_sql
+from mapeamentoDcentro import extrair_nomes_arquivos, verificar_classes_no_banco
 from juntaSombra_DataModule import combinar_sombra_e_datamodule, filtrar_e_salvar_csv, remover_primeiro_c_e_salvar_csv
 
 import os
@@ -57,6 +58,18 @@ def main():
 
     listar_arquivos_dcentro(diretorio, diretorio_saida_DCentro)
     extrair_sql_dcentrosql(diretorio, diretorio_saida_DCentro)
+
+    listar_arquivos_dcentro_sql(diretorio, diretorio_saida_DCentro)
+
+    arquivo_csv_dcentro_sql = os.path.join(diretorio_saida_DCentro, "arquivos_dcentro_sql.csv")
+
+    arquivos_dcentro_sql = ler_arquivos_csv(arquivo_csv_dcentro_sql)
+    listar_arquivos_com_e_sem_obter_sql(diretorio, arquivos_dcentro_sql, diretorio_saida_DCentro)
+
+    caminho_csv = r"C:\Projetos\MigracaoSQL\Log_DCentro\arquivos_com_e_sem_obter_sql.csv"
+    extrair_nomes_arquivos(caminho_csv)
+
+    verificar_classes_no_banco(caminho_csv, diretorio_saida_DCentro)
 
     combinar_sombra_e_datamodule(diretorio_saida_FormDFM, diretorio_saida_FormDFM_DataModule, diretorio_saida_Combinado, arquivo_saida)
     

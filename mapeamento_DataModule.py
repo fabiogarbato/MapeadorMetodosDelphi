@@ -348,12 +348,14 @@ def inserir_dados_combinados_no_banco(diretorio_saida, nome_arquivo_entrada):
             arquivo_f, arquivo_d, arquivo_r, objetos = linha
             
             relatorio = None if not arquivo_r.strip() else arquivo_r.strip()
-           
             objeto_banco = None if not objetos.strip() else objetos.strip()
+
+            arquivo_f_sem_extensao = arquivo_f.strip().split('.')[0]
+            arquivo_d_sem_extensao = arquivo_d.strip().split('.')[0]
 
             cursor.execute(
                 "INSERT INTO Mapa (Form, Classe, Sombra, Relatorio, ObjetoBanco) VALUES (%s, %s, %s, %s, %s)",
-                (arquivo_f.strip(), arquivo_d.strip(), None, relatorio, objeto_banco)
+                (arquivo_f_sem_extensao, arquivo_d_sem_extensao, None, relatorio, objeto_banco)
             )
 
     conn.commit()
