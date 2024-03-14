@@ -335,6 +335,33 @@ def combinar_arquivos_e_objetos(diretorio_arquivos, diretorio_objetos, diretorio
 
     print(f"Arquivo combinado criado: {nome_arquivo_saida}")
 
+def inserir_dados_combinados_no_banco(diretorio_saida, nome_arquivo_entrada):
+    caminho_arquivo_entrada = os.path.join(diretorio_saida, nome_arquivo_entrada)
+
+    conn = psycopg2.connect(host='cerato.mps.interno', dbname='migracaoSql', user='FabioGarbato', password='BPt3bpMRzivTo3tamwC9')
+    cursor = conn.cursor()
+
+    with open(caminho_arquivo_entrada, 'r', encoding='utf-8') as f:
+        csvreader = csv.reader(f)
+        next(csvreader) 
+        for linha in csvreader:
+            arquivo_f, arquivo_d, arquivo_r, objetos = linha
+            
+            relatorio = None if not arquivo_r.strip() else arquivo_r.strip()
+           
+            objeto_banco = None if not objetos.strip() else objetos.strip()
+
+            cursor.execute(
+                "INSERT INTO Mapa (Form, Classe, Sombra, Relatorio, ObjetoBanco) VALUES (%s, %s, %s, %s, %s)",
+                (arquivo_f.strip(), arquivo_d.strip(), None, relatorio, objeto_banco)
+            )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print(f"Dados inseridos no banco a partir de {caminho_arquivo_entrada}")
+
 
 
 
