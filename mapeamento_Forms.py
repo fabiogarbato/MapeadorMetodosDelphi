@@ -1,6 +1,7 @@
 import os, re, csv
 import pandas as pd
 import psycopg2
+import fnmatch
 
 conn = psycopg2.connect(host='cerato.mps.interno', dbname='migracaoSql', user='FabioGarbato', password='BPt3bpMRzivTo3tamwC9')
 cursor = conn.cursor()
@@ -186,6 +187,97 @@ def inserir_no_banco(diretorio_saida, nome_arquivo_entrada):
     conn.close()
 
     print(f"Dados inseridos no banco a partir de {caminho_arquivo_entrada}")
+    
+def exportar_sombras_para_csv(diretorio, diretorio_saida):
+
+    nome_arquivo_saida = 'SombrasDiferentes.csv'
+    nome_arquivo_encontrados = 'arquivosSombrasDiferentes.csv'
+    nome_arquivo_queries = 'queries_extraidas.csv'
+
+    conn = psycopg2.connect(
+        host='cerato.mps.interno',
+        dbname='migracaoSql',
+        user='FabioGarbato',
+        password='BPt3bpMRzivTo3tamwC9'
+    )
+    cursor = conn.cursor()
+
+    consulta_sql = """
+        SELECT Sombra FROM Mapa 
+        WHERE ObjetoBanco IS NULL AND Sombra IS NOT NULL 
+    """
+    cursor.execute(consulta_sql)
+    
+    resultados = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    caminho_arquivo_saida = os.path.join(diretorio_saida, nome_arquivo_saida)
+    
+    with open(caminho_arquivo_saida, 'w', newline='', encoding='utf-8') as f:
+        escritor = csv.writer(f)
+        escritor.writerow(['Sombra'])  
+        for linha in resultados:
+            sombra = linha[0].rstrip('-')
+            escritor.writerow([sombra])
+    
+    sombras_encontradas = []
+    for sombra in resultados:
+        sombra_arquivo = sombra[0].rstrip('-').strip() + '.pas'
+        for diretorio_atual, _, arquivos in os.walk(diretorio):
+            for nome_arquivo in fnmatch.filter(arquivos, sombra_arquivo):
+                sombras_encontradas.append(os.path.join(diretorio_atual, nome_arquivo))
+    
+    caminho_arquivo_encontrados = os.path.join(diretorio_saida, nome_arquivo_encontrados)
+    with open(caminho_arquivo_encontrados, 'w', newline='', encoding='iso-8859-1') as f:
+        escritor = csv.writer(f)
+        escritor.writerow(['Caminho Completo do Arquivo'])  
+        for arquivo in sombras_encontradas:
+            escritor.writerow([arquivo])
+    
+    def extrair_queries(arquivo):
+        with open(arquivo, 'r', encoding='iso-8859-1') as f:
+            conteudo = f.read()
+
+        queries = []
+
+        dentro_de_texto = False
+        query_atual = ""
+        ultimo_caractere = ""
+
+        for caractere in conteudo:
+            if caractere == "'" and ultimo_caractere in ['(', ',']:
+                dentro_de_texto = True
+                query_atual = ""
+            elif caractere == "'" and dentro_de_texto:
+                dentro_de_texto = False
+                queries.append(query_atual)
+                query_atual = ""
+            elif dentro_de_texto:
+                query_atual += caractere
+
+            ultimo_caractere = caractere
+
+        query_completa = ' '.join(queries)
+        return query_completa
+
+    caminho_arquivo_queries = os.path.join(diretorio_saida, nome_arquivo_queries)
+    with open(caminho_arquivo_encontrados, 'r', newline='', encoding='iso-8859-1') as f_in, \
+         open(caminho_arquivo_queries, 'w', newline='', encoding='iso-8859-1') as f_out:
+        leitor = csv.reader(f_in)
+        escritor = csv.writer(f_out)
+        escritor.writerow(['Sombra', 'Query'])  
+        next(leitor)  
+        for linha in leitor:
+            caminho_arquivo = linha[0]
+            query = extrair_queries(caminho_arquivo)
+            if query:  
+                nome_arquivo = os.path.basename(caminho_arquivo)
+                escritor.writerow([nome_arquivo, query])
+                print(f"{nome_arquivo} - Query:\n{query}\n{'-' * 80}")
+
+
 
 
 
