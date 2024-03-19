@@ -188,7 +188,7 @@ def inserir_no_banco(diretorio_saida, nome_arquivo_entrada):
 
     print(f"Dados inseridos no banco a partir de {caminho_arquivo_entrada}")
     
-def exportar_sombras_para_csv(diretorio, diretorio_saida):
+def mapearSombraExecao(diretorio, diretorio_saida):
 
     nome_arquivo_saida = 'SombrasDiferentes.csv'
     nome_arquivo_encontrados = 'arquivosSombrasDiferentes.csv'
@@ -276,6 +276,33 @@ def exportar_sombras_para_csv(diretorio, diretorio_saida):
                 nome_arquivo = os.path.basename(caminho_arquivo)
                 escritor.writerow([nome_arquivo, query])
                 print(f"{nome_arquivo} - Query:\n{query}\n{'-' * 80}")
+    
+    conn = psycopg2.connect(
+        host='cerato.mps.interno',
+        dbname='migracaoSql',
+        user='FabioGarbato',
+        password='BPt3bpMRzivTo3tamwC9'
+    )
+    cursor = conn.cursor()
+
+    with open(caminho_arquivo_queries, 'r', newline='', encoding='iso-8859-1') as f:
+        leitor = csv.reader(f)
+        next(leitor)  
+        for linha in leitor:
+            sombra, query = linha
+            sombra_sem_extensao = sombra.rstrip('.pas')
+            update_sql = f"""
+                UPDATE Mapa
+                SET ObjetoBanco = '{query}'
+                WHERE Sombra = '{sombra_sem_extensao} -'
+            """
+            print(f"Query:\n{update_sql}\n{'-' * 80}")
+            cursor.execute(update_sql)
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
 
 
 
